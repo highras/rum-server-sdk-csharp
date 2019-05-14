@@ -30,6 +30,8 @@ namespace com.fpnn
         private ArrayList SendQueue = new ArrayList();
         private ManualResetEvent SendEvent = new ManualResetEvent(false);
         private FPData ReadData;
+        private int ReadNum = 0;
+        private byte[] ReadBuffer = null;
         private bool IsClosedCallbackRun = false;
         private bool IsConnecting = false;
         private object ConnectingLock = new object();
@@ -40,6 +42,8 @@ namespace com.fpnn
             Port = port;
             Timeout = timeout;
             ReadData = new FPData(isEncryptor);
+            ReadNum = 0;
+            ReadBuffer = new byte[ReadData.nextLength];
             Client = new TcpClient();
         }
 
@@ -129,8 +133,8 @@ namespace com.fpnn
         {
             try
             {
-                byte[] buffer = new byte[ReadData.nextLength];
-                Stream.BeginRead(buffer, 0, (int)ReadData.nextLength, (ar) =>
+                int len = ReadBuffer.Length - ReadNum;
+                Stream.BeginRead(ReadBuffer, ReadNum, len, (ar) =>
                 {
                     try
                     {
@@ -143,15 +147,22 @@ namespace com.fpnn
                         }
                         else
                         {
-                            if (ReadData.Decode(buffer))
+                            ReadNum += readBytes;
+                            if (ReadNum == ReadBuffer.Length)
                             {
-                                if (OnRead != null)
+                                if (ReadData.Decode(ReadBuffer))
                                 {
-                                    FPData dataClone = (FPData)ReadData.Clone();
-                                    OnRead(dataClone);
+                                    if (OnRead != null)
+                                    {
+                                        FPData dataClone = (FPData)ReadData.Clone();
+                                        OnRead(dataClone);
+                                    }
+                                    ReadData.Reset();
                                 }
-                                    
-                                ReadData.Reset();
+
+                                ReadNum = 0;
+                                Array.Clear(ReadBuffer, 0, ReadBuffer.Length);
+                                ReadBuffer = new byte[ReadData.nextLength];
                             }
                             ListenForRead();
                         }
@@ -260,6 +271,12 @@ namespace com.fpnn
             {
                 WriteThread.Join(); 
                 WriteThread = null;
+            }
+            ReadNum = 0;
+            if (ReadBuffer != null)
+            {
+                Array.Clear(ReadBuffer, 0, ReadBuffer.Length);
+                ReadBuffer = null;
             }
         }
     }
