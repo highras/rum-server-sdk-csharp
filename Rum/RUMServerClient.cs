@@ -76,12 +76,12 @@ namespace com.rum
             Init();
         }
 
-        public void SetRid(string rid)
+        public void SetRumId(string rid)
         {
             Rid = rid;
         }
 
-        public void SetSid(long sid)
+        public void SetSessionId(long sid)
         {
             Sid = sid;
         }
