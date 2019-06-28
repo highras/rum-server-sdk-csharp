@@ -52,3 +52,21 @@ client.SendCustomEvents(events, 5000, (exception) =>
         Console.WriteLine("send ok");
 });
 ```
+
+### Set Connected、Closed、Error Callback
+```
+client.ConnectedCallback = delegate()
+{
+// TODO
+}
+
+client.ClosedCallback = delegate()
+{
+// TODO
+};
+
+client.ErrorCallback = delegate(Exception e)
+{
+// TODO
+};
+```
